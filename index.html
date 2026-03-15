@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบส่งกระดาษคำตอบ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brand: #1a5c3e;
+  --brand-light: #e8f5ee;
+  --brand-mid: #2d8f5e;
+  --accent: #f0a500;
+  --accent-light: #fff8e6;
+  --danger: #c0392b;
+  --danger-light: #fdf0ee;
+  --text: #1a1a1a;
+  --text-muted: #666;
+  --text-faint: #999;
+  --border: #e0e0e0;
+  --surface: #f7f8fa;
+  --white: #ffffff;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* ── HEADER ── */
+.site-header {
+  background: var(--brand);
+  color: white;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.site-header .logo { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; opacity: 0.9; }
+.site-header .sub { font-size: 12px; opacity: 0.55; margin-left: auto; }
+.mode-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.15);
+}
+
+/* ── LAYOUT ── */
+.page { display: none; min-height: calc(100vh - 56px); }
+.page.active { display: block; }
+.container { max-width: 680px; margin: 0 auto; padding: 2rem 1.25rem; }
+
+/* ── CARD ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── FORM ── */
+.field { margin-bottom: 1.1rem; }
+.field:last-child { margin-bottom: 0; }
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+label .req { color: var(--danger); margin-left: 2px; }
+input[type=text], input[type=password], select, textarea {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: 'Sarabun', sans-serif;
+  background: var(--white);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--brand-mid);
+  box-shadow: 0 0 0 3px rgba(45,143,94,0.12);
+}
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── DROPZONE ── */
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+  position: relative;
+}
+.dropzone:hover, .dropzone.over { border-color: var(--brand-mid); background: var(--brand-light); }
+.dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.dropzone-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+.dropzone p { font-size: 14px; color: var(--text-muted); }
+.dropzone small { font-size: 12px; color: var(--text-faint); display: block; margin-top: 4px; }
+
+/* ── FILE ITEMS ── */
+.file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+.file-type {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.type-pdf { background: #fde8e6; color: #c0392b; }
+.type-doc { background: #e6eef9; color: #1a4f9c; }
+.type-img { background: #e8f5ee; color: #1a5c3e; }
+.file-info { flex: 1; min-width: 0; }
+.file-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-size { font-size: 11px; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace; }
+.file-del { background: none; border: none; cursor: pointer; color: var(--text-faint); font-size: 16px; line-height: 1; padding: 4px; border-radius: 4px; }
+.file-del:hover { background: var(--danger-light); color: var(--danger); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 22px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: 'Sarabun', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--brand); color: white; width: 100%; }
+.btn-primary:hover:not(:disabled) { background: #0f3d28; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-outline {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 8px 16px;
+}
+.btn-outline:hover { border-color: var(--brand-mid); color: var(--brand); }
+.btn-danger { background: var(--danger); color: white; }
+
+/* ── PROGRESS ── */
+.progress-wrap { margin-top: 12px; display: none; }
+.progress-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--brand-mid); border-radius: 3px; transition: width 0.4s ease; width: 0; }
+.progress-label { font-size: 12px; color: var(--text-muted); margin-top: 6px; text-align: center; }
+
+/* ── ALERTS / STATUS ── */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  margin-bottom: 1rem;
+  display: none;
+}
+.alert-success { background: var(--brand-light); color: var(--brand); border: 1px solid #a8d8bb; }
+.alert-error { background: var(--danger-light); color: var(--danger); border: 1px solid #f0b8b3; }
+.alert-info { background: var(--accent-light); color: #7a5200; border: 1px solid #f5d080; }
+
+/* ── SUCCESS SCREEN ── */
+.success-screen { display: none; text-align: center; padding: 3rem 1.5rem; }
+.success-check {
+  width: 72px; height: 72px;
+  background: var(--brand-light);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 1.25rem;
+  border: 2px solid var(--brand-mid);
+}
+.success-title { font-size: 20px; font-weight: 600; color: var(--brand); margin-bottom: 6px; }
+.success-sub { font-size: 14px; color: var(--text-muted); }
+.receipt-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  text-align: left;
+  font-size: 13px;
+}
+.receipt-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--border); }
+.receipt-row:last-child { border-bottom: none; }
+.receipt-key { color: var(--text-muted); }
+.receipt-val { font-weight: 500; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+/* ── TEACHER PANEL ── */
+.teacher-panel { }
+.tabs { display: flex; gap: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.tab-btn {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Sarabun', sans-serif;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+.tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.link-card {
+  background: var(--brand-light);
+  border: 1px solid #a8d8bb;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.link-row { display: flex; gap: 8px; margin-top: 8px; }
+.link-input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid #a8d8bb;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  background: white;
+  color: var(--brand);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.link-copy {
+  padding: 9px 14px;
+  background: var(--brand);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.link-copy:hover { background: #0f3d28; }
+
+.sub-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sub-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.sub-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.sub-table tr:last-child td { border-bottom: none; }
+.sub-table tr:hover td { background: var(--surface); }
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.pill-ok { background: var(--brand-light); color: var(--brand); }
+.pill-pending { background: var(--accent-light); color: #7a5200; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+.stat-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+}
+.stat-num { font-size: 26px; font-weight: 300; color: var(--brand); font-family: 'IBM Plex Mono', monospace; }
+.stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── GAS SETUP ── */
+.setup-step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+}
+.step-num {
+  width: 28px; height: 28px;
+  background: var(--brand);
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.step-body { flex: 1; }
+.step-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.step-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+.code-block {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.7;
+  margin-top: 8px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.kw { color: #c792ea; }
+.str { color: #c3e88d; }
+.cm { color: #546e7a; }
+.fn { color: #82aaff; }
+
+/* ── EXAM HEADER (Student view) ── */
+.exam-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 0;
+}
+.exam-course { font-size: 11px; color: var(--text-faint); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
+.exam-title { font-size: 20px; font-weight: 600; color: var(--brand); }
+.exam-meta { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.exam-deadline {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--accent-light);
+  color: #7a5200;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .row-2 { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .container { padding: 1.25rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <span class="logo">ExamSubmit</span>
+  <span id="modeBadge" class="mode-badge">อาจารย์</span>
+  <span class="sub" id="headerSub">RMUTT · Faculty of Management Science</span>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: TEACHER PANEL
+═══════════════════════════════════════════ -->
+<div class="page active" id="pageTeacher">
+<div class="container teacher-panel">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTeacherTab('create')">สร้างลิงก์</button>
+    <button class="tab-btn" onclick="switchTeacherTab('submissions')">รับงาน</button>
+    <button class="tab-btn" onclick="switchTeacherTab('setup')">ตั้งค่า API</button>
+  </div>
+
+  <!-- TAB: สร้างลิงก์ -->
+  <div class="tab-content active" id="tc-create">
+    <div id="alertCreate" class="alert"></div>
+
+    <div class="card">
+      <div class="card-title">ข้อมูลการสอบ</div>
+      <div class="row-2">
+        <div class="field">
+          <label>รหัสวิชา <span class="req">*</span></label>
+          <input type="text" id="t-courseCode" placeholder="เช่น MGT3201">
+        </div>
+        <div class="field">
+          <label>กลุ่มเรียน / Section</label>
+          <input type="text" id="t-section" placeholder="เช่น 101, กลุ่ม A">
+        </div>
+      </div>
+      <div class="field">
+        <label>ชื่อวิชา <span class="req">*</span></label>
+        <input type="text" id="t-courseName" placeholder="เช่น การจัดการโลจิสติกส์">
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>ประเภทข้อสอบ</label>
+          <select id="t-examType">
+            <option value="midterm">กลางภาค (Midterm)</option>
+            <option value="final">ปลายภาค (Final)</option>
+            <option value="quiz">สอบย่อย (Quiz)</option>
+            <option value="makeup">สอบซ่อม (Makeup)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>ภาคเรียน/ปีการศึกษา</label>
+          <input type="text" id="t-semester" placeholder="เช่น 1/2567">
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>วันที่สอบ</label>
+          <input type="text" id="t-examDate" placeholder="เช่น 15 ม.ค. 2568">
+        </div>
+        <div class="field">
+          <label>กำหนดส่ง (วัน เวลา)</label>
+          <input type="text" id="t-deadline" placeholder="เช่น 15 ม.ค. 2568 เวลา 12:00">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="generateLink()">สร้างลิงก์สำหรับนักศึกษา</button>
+
+    <div id="linkResult" style="display:none; margin-top:1rem;">
+      <div class="link-card">
+        <div style="font-size:13px; font-weight:600; color:var(--brand); margin-bottom:4px;">ลิงก์สำหรับแชร์ให้นักศึกษา</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">คัดลอกลิงก์นี้แล้วส่งให้นักศึกษาผ่าน LMS หรือ Line กลุ่ม</div>
+        <div class="link-row">
+          <input class="link-input" id="generatedLink" readonly>
+          <button class="link-copy" onclick="copyLink()">คัดลอก</button>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); text-align:center;">
+        นักศึกษาไม่ต้อง login — เปิดลิงก์กรอกข้อมูลและแนบไฟล์ได้เลย
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: รับงาน -->
+  <div class="tab-content" id="tc-submissions">
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-num" id="st-total">0</div>
+        <div class="stat-label">ส่งแล้ว</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="st-files">0</div>
+        <div class="stat-label">ไฟล์ทั้งหมด</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="st-today">0</div>
+        <div class="stat-label">วันนี้</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">รายการส่งงาน</span>
+        <button class="btn btn-outline" onclick="loadSubmissions()" style="font-size:12px; padding:6px 12px;">รีเฟรช</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="sub-table">
+          <thead>
+            <tr>
+              <th>รหัส นศ</th>
+              <th>ชื่อ-สกุล</th>
+              <th>กลุ่ม/นั่ง</th>
+              <th>ไฟล์</th>
+              <th>เวลาส่ง</th>
+              <th>Drive</th>
+            </tr>
+          </thead>
+          <tbody id="subTableBody">
+            <tr><td colspan="6" style="text-align:center; color:var(--text-faint); padding:2.5rem;">ยังไม่มีการส่งงาน</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ตั้งค่า API -->
+  <div class="tab-content" id="tc-setup">
+    <div class="alert alert-info" style="display:block; margin-bottom:1rem;">
+      ระบบนี้ใช้ <strong>Google Apps Script</strong> เป็น backend ฟรี — นักศึกษาไม่ต้อง login เพราะ Script เป็นตัวอัปโหลดแทน
+    </div>
+
+    <div class="card">
+      <div class="card-title">ขั้นตอนตั้งค่า (ทำครั้งเดียว)</div>
+
+      <div class="setup-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">เปิด Google Apps Script</div>
+          <div class="step-desc">ไปที่ <strong>script.google.com</strong> → New Project → วาง code ด้านล่างนี้</div>
+          <div class="code-block"><span class="kw">function</span> <span class="fn">doPost</span>(e) {
+  <span class="kw">const</span> data = JSON.<span class="fn">parse</span>(e.postData.contents);
+  <span class="kw">const</span> folderId = <span class="str">"YOUR_FOLDER_ID"</span>; <span class="cm">// ← ใส่ Folder ID ของคุณ</span>
+  <span class="kw">const</span> folder = DriveApp.<span class="fn">getFolderById</span>(folderId);
+
+  <span class="cm">// สร้างโฟลเดอร์ตามวิชา</span>
+  <span class="kw">const</span> subFolder = <span class="fn">getOrCreate</span>(folder, data.course);
+  <span class="kw">const</span> examFolder = <span class="fn">getOrCreate</span>(subFolder, data.examType);
+
+  <span class="cm">// บันทึกแต่ละไฟล์</span>
+  data.files.<span class="fn">forEach</span>(f => {
+    <span class="kw">const</span> bytes = Utilities.<span class="fn">base64Decode</span>(f.data);
+    <span class="kw">const</span> blob = Utilities.<span class="fn">newBlob</span>(bytes, f.type, f.name);
+    examFolder.<span class="fn">createFile</span>(blob);
+  });
+
+  <span class="cm">// บันทึก log ลง Sheet</span>
+  <span class="kw">const</span> ss = SpreadsheetApp.<span class="fn">openById</span>(<span class="str">"YOUR_SHEET_ID"</span>);
+  ss.<span class="fn">getActiveSheet</span>().<span class="fn">appendRow</span>([
+    <span class="kw">new</span> <span class="fn">Date</span>(), data.studentId, data.name,
+    data.section, data.seat, data.course,
+    data.examType, data.files.<span class="fn">map</span>(f=>f.name).<span class="fn">join</span>(<span class="str">", "</span>)
+  ]);
+
+  <span class="kw">return</span> ContentService
+    .<span class="fn">createTextOutput</span>(JSON.<span class="fn">stringify</span>({ok:<span class="kw">true</span>}))
+    .<span class="fn">setMimeType</span>(ContentService.MimeType.JSON);
+}
+
+<span class="kw">function</span> <span class="fn">getOrCreate</span>(parent, name) {
+  <span class="kw">const</span> found = parent.<span class="fn">getFoldersByName</span>(name);
+  <span class="kw">return</span> found.<span class="fn">hasNext</span>() ? found.<span class="fn">next</span>()
+    : parent.<span class="fn">createFolder</span>(name);
+}</div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Deploy เป็น Web App</div>
+          <div class="step-desc">Deploy → New deployment → Web App → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong> → Deploy → คัดลอก URL</div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">สร้าง Google Sheet สำหรับ log</div>
+          <div class="step-desc">สร้าง Sheet ใหม่ → คัดลอก Sheet ID จาก URL (ส่วน /d/<strong>SHEET_ID</strong>/edit) ใส่ในโค้ด</div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">กรอก URL ด้านล่างนี้</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">การตั้งค่าระบบ</div>
+      <div class="field">
+        <label>Google Apps Script Web App URL <span class="req">*</span></label>
+        <input type="text" id="cfg-gasUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+      </div>
+      <div class="field">
+        <label>Google Sheet ID (สำหรับดู log)</label>
+        <input type="text" id="cfg-sheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      </div>
+      <div class="field">
+        <label>ชื่ออาจารย์ (แสดงในหน้า นศ)</label>
+        <input type="text" id="cfg-teacherName" placeholder="อาจารย์ สมชาย ใจดี">
+      </div>
+      <div class="field">
+        <label>ขนาดไฟล์สูงสุดต่อการส่ง (MB)</label>
+        <select id="cfg-maxSize">
+          <option value="10">10 MB</option>
+          <option value="20" selected>20 MB</option>
+          <option value="50">50 MB</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()">บันทึกการตั้งค่า</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: STUDENT SUBMISSION
+═══════════════════════════════════════════ -->
+<div class="page" id="pageStudent">
+
+  <div class="exam-header" id="examHeader">
+    <div class="exam-course" id="s-examLabel">กำลังโหลด...</div>
+    <div class="exam-title" id="s-examTitle">—</div>
+    <div class="exam-meta" id="s-examMeta"></div>
+    <div class="exam-deadline" id="s-deadline" style="display:none;">
+      ⏰ กำหนดส่ง: <span id="s-deadlineText"></span>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="alertStudent" class="alert"></div>
+
+    <!-- FORM -->
+    <div id="studentForm">
+      <div class="card">
+        <div class="card-title">ข้อมูลนักศึกษา</div>
+        <div class="row-2">
+          <div class="field">
+            <label>รหัสนักศึกษา <span class="req">*</span></label>
+            <input type="text" id="s-studentId" placeholder="เช่น 64010001234" maxlength="13" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label>กลุ่มเรียน / Section <span class="req">*</span></label>
+            <input type="text" id="s-section" placeholder="เช่น 101">
+          </div>
+        </div>
+        <div class="field">
+          <label>ชื่อ-นามสกุล <span class="req">*</span></label>
+          <input type="text" id="s-name" placeholder="เช่น สมศรี มีสุข (ไม่ต้องใส่คำนำหน้า)">
+        </div>
+        <div class="field">
+          <label>เลขที่นั่งสอบ <span class="req">*</span></label>
+          <input type="text" id="s-seat" placeholder="เช่น 15" maxlength="5" inputmode="numeric">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">แนบไฟล์กระดาษคำตอบ</div>
+        <div class="dropzone" id="s-dropzone">
+          <input type="file" id="s-fileInput" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleStudentFiles(this.files)">
+          <span class="dropzone-icon">📄</span>
+          <p>แตะเพื่อเลือกไฟล์ หรือลากวางที่นี่</p>
+          <small>PDF, Word, JPG, PNG · สูงสุด <span id="maxSizeLabel">20</span> MB รวม</small>
+        </div>
+        <div class="file-list" id="s-fileList"></div>
+      </div>
+
+      <div class="progress-wrap" id="s-progressWrap">
+        <div class="progress-track"><div class="progress-fill" id="s-progressFill"></div></div>
+        <div class="progress-label" id="s-progressLabel">กำลังอัปโหลด...</div>
+      </div>
+
+      <button class="btn btn-primary" id="s-submitBtn" onclick="submitExam()">
+        ส่งกระดาษคำตอบ
+      </button>
+      <p style="font-size:12px; color:var(--text-faint); text-align:center; margin-top:8px;">
+        ตรวจสอบข้อมูลให้ถูกต้องก่อนกด — ส่งแล้วไม่สามารถแก้ไขได้
+      </p>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="s-success">
+      <div class="success-check">✓</div>
+      <div class="success-title">ส่งกระดาษคำตอบสำเร็จ!</div>
+      <div class="success-sub">ระบบได้รับไฟล์ของคุณแล้ว</div>
+      <div class="receipt-box" id="s-receipt"></div>
+      <p style="font-size:12px; color:var(--text-faint);">โปรดจำรหัสการส่งนี้ไว้เพื่ออ้างอิง</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let studentFiles = [];
+let examData = {};
+let config = JSON.parse(localStorage.getItem('examSubmitConfig') || '{}');
+let submissions = JSON.parse(localStorage.getItem('examSubmissions') || '[]');
+
+// ═══════════════════════════════════════════
+// ROUTER — ตรวจ URL param
+// ═══════════════════════════════════════════
+function init() {
+  const params = new URLSearchParams(location.search);
+  const encoded = params.get('exam');
+
+  if (encoded) {
+    // Student mode
+    document.getElementById('pageTeacher').classList.remove('active');
+    document.getElementById('pageStudent').classList.add('active');
+    document.getElementById('modeBadge').textContent = 'นักศึกษา';
+    document.getElementById('headerSub').textContent = 'แนบไฟล์กระดาษคำตอบ';
+    loadExamData(encoded);
+  } else {
+    // Teacher mode
+    loadConfig();
+    loadSubmissions();
+    updateStats();
+  }
+}
+
+// ═══════════════════════════════════════════
+// TEACHER — สร้างลิงก์
+// ═══════════════════════════════════════════
+function generateLink() {
+  const code = v('t-courseCode'), name = v('t-courseName');
+  if (!code || !name) { showAlert('alertCreate', 'กรุณากรอกรหัสวิชาและชื่อวิชา', 'error'); return; }
+
+  const examObj = {
+    courseCode: code,
+    courseName: name,
+    section: v('t-section'),
+    examType: v('t-examType'),
+    semester: v('t-semester'),
+    examDate: v('t-examDate'),
+    deadline: v('t-deadline'),
+    teacher: config.teacherName || '',
+    gasUrl: config.gasUrl || ''
+  };
+
+  const encoded = btoa(encodeURIComponent(JSON.stringify(examObj)));
+  const link = `${location.origin}${location.pathname}?exam=${encoded}`;
+
+  document.getElementById('generatedLink').value = link;
+  document.getElementById('linkResult').style.display = 'block';
+}
+
+function copyLink() {
+  const inp = document.getElementById('generatedLink');
+  navigator.clipboard.writeText(inp.value).then(() => {
+    const btn = document.querySelector('.link-copy');
+    btn.textContent = 'คัดลอกแล้ว!';
+    setTimeout(() => btn.textContent = 'คัดลอก', 2000);
+  });
+}
+
+// ═══════════════════════════════════════════
+// TEACHER — ตั้งค่า
+// ═══════════════════════════════════════════
+function saveConfig() {
+  config = {
+    gasUrl: v('cfg-gasUrl'),
+    sheetId: v('cfg-sheetId'),
+    teacherName: v('cfg-teacherName'),
+    maxSize: parseInt(v('cfg-maxSize')) || 20
+  };
+  localStorage.setItem('examSubmitConfig', JSON.stringify(config));
+  alert('บันทึกการตั้งค่าแล้ว!');
+}
+
+function loadConfig() {
+  if (config.gasUrl) set('cfg-gasUrl', config.gasUrl);
+  if (config.sheetId) set('cfg-sheetId', config.sheetId);
+  if (config.teacherName) set('cfg-teacherName', config.teacherName);
+  if (config.maxSize) set('cfg-maxSize', config.maxSize);
+}
+
+// ═══════════════════════════════════════════
+// TEACHER — ตาราง submissions (จาก localStorage demo)
+// ═══════════════════════════════════════════
+function loadSubmissions() {
+  const tbody = document.getElementById('subTableBody');
+  if (!submissions.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:2.5rem;">ยังไม่มีการส่งงาน</td></tr>';
+    return;
+  }
+  tbody.innerHTML = submissions.map(s => `
+    <tr>
+      <td class="mono" style="font-size:12px;">${s.studentId}</td>
+      <td>${s.name}</td>
+      <td style="font-size:12px;">${s.section} / ${s.seat}</td>
+      <td style="font-size:12px; color:var(--text-muted);">${s.files}</td>
+      <td style="font-size:12px; color:var(--text-muted); white-space:nowrap;">${s.time}</td>
+      <td><span class="pill pill-ok">✓ สำเร็จ</span></td>
+    </tr>
+  `).join('');
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('st-total').textContent = submissions.length;
+  const totalFiles = submissions.reduce((a, s) => a + (s.fileCount || 1), 0);
+  document.getElementById('st-files').textContent = totalFiles;
+  const today = new Date().toLocaleDateString('th-TH');
+  const todayCount = submissions.filter(s => s.dateStr === today).length;
+  document.getElementById('st-today').textContent = todayCount;
+}
+
+// ═══════════════════════════════════════════
+// STUDENT — โหลดข้อมูลการสอบจาก URL
+// ═══════════════════════════════════════════
+function loadExamData(encoded) {
+  try {
+    examData = JSON.parse(decodeURIComponent(atob(encoded)));
+    const typeLabel = { midterm: 'กลางภาค', final: 'ปลายภาค', quiz: 'สอบย่อย', makeup: 'สอบซ่อม' };
+    const t = typeLabel[examData.examType] || examData.examType;
+    document.getElementById('s-examLabel').textContent =
+      `${examData.courseCode} ${examData.section ? '· กลุ่ม '+examData.section : ''} · ${t} ${examData.semester || ''}`;
+    document.getElementById('s-examTitle').textContent = examData.courseName;
+    document.getElementById('s-examMeta').textContent =
+      (examData.teacher ? 'อาจารย์ผู้สอน: ' + examData.teacher : '') +
+      (examData.examDate ? ' · วันที่สอบ: ' + examData.examDate : '');
+
+    if (examData.deadline) {
+      document.getElementById('s-deadline').style.display = 'inline-flex';
+      document.getElementById('s-deadlineText').textContent = examData.deadline;
+    }
+
+    document.getElementById('maxSizeLabel').textContent = config.maxSize || examData.maxSize || 20;
+
+    // ตั้งค่า section อัตโนมัติ
+    if (examData.section) set('s-section', examData.section);
+
+    // dragover
+    const dz = document.getElementById('s-dropzone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); handleStudentFiles(e.dataTransfer.files); });
+
+  } catch(e) {
+    showAlert('alertStudent', 'ลิงก์ไม่ถูกต้อง กรุณาติดต่ออาจารย์', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// STUDENT — จัดการไฟล์
+// ═══════════════════════════════════════════
+function handleStudentFiles(fileList) {
+  for (const f of fileList) {
+    if (!studentFiles.find(x => x.name === f.name)) studentFiles.push(f);
+  }
+  renderStudentFiles();
+}
+
+function renderStudentFiles() {
+  const el = document.getElementById('s-fileList');
+  if (!studentFiles.length) { el.innerHTML = ''; return; }
+  el.innerHTML = studentFiles.map((f, i) => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const cls = ext === 'pdf' ? 'type-pdf' : ['doc','docx'].includes(ext) ? 'type-doc' : 'type-img';
+    const label = ext === 'pdf' ? 'PDF' : ['doc','docx'].includes(ext) ? 'DOC' : 'IMG';
+    return `<div class="file-item">
+      <div class="file-type ${cls}">${label}</div>
+      <div class="file-info">
+        <div class="file-name">${f.name}</div>
+        <div class="file-size">${fmtSize(f.size)}</div>
+      </div>
+      <button class="file-del" onclick="removeStudentFile(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeStudentFile(i) { studentFiles.splice(i, 1); renderStudentFiles(); }
+
+// ═══════════════════════════════════════════
+// STUDENT — ส่งงาน
+// ═══════════════════════════════════════════
+async function submitExam() {
+  const studentId = v('s-studentId').trim();
+  const name = v('s-name').trim();
+  const section = v('s-section').trim();
+  const seat = v('s-seat').trim();
+
+  if (!studentId || !name || !section || !seat) {
+    showAlert('alertStudent', 'กรุณากรอกข้อมูลให้ครบทุกช่อง', 'error'); return;
+  }
+  if (!/^\d{10,13}$/.test(studentId)) {
+    showAlert('alertStudent', 'รหัสนักศึกษาต้องเป็นตัวเลข 10-13 หลัก', 'error'); return;
+  }
+  if (!studentFiles.length) {
+    showAlert('alertStudent', 'กรุณาแนบไฟล์กระดาษคำตอบอย่างน้อย 1 ไฟล์', 'error'); return;
+  }
+
+  const maxMB = parseInt(config.maxSize || examData.maxSize || 20);
+  const totalSize = studentFiles.reduce((a, f) => a + f.size, 0);
+  if (totalSize > maxMB * 1024 * 1024) {
+    showAlert('alertStudent', `ไฟล์รวมกันใหญ่เกินไป (สูงสุด ${maxMB} MB)`, 'error'); return;
+  }
+
+  const gasUrl = examData.gasUrl || config.gasUrl;
+  if (!gasUrl) {
+    showAlert('alertStudent', 'ระบบยังไม่ได้ตั้งค่า กรุณาติดต่ออาจารย์', 'error'); return;
+  }
+
+  const btn = document.getElementById('s-submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังส่ง...';
+  setProgress(5, 'กำลังเตรียมไฟล์...');
+
+  try {
+    // อ่านไฟล์เป็น base64
+    const filesData = [];
+    for (let i = 0; i < studentFiles.length; i++) {
+      setProgress(5 + (i / studentFiles.length) * 50, `กำลังเตรียมไฟล์ ${i+1}/${studentFiles.length}...`);
+      const b64 = await fileToBase64(studentFiles[i]);
+      // ตั้งชื่อไฟล์ใหม่ตาม รหัสนศ_ชื่อ_ลำดับ
+      const ext = studentFiles[i].name.split('.').pop();
+      const newName = `${studentId}_${name}_${String(i+1).padStart(2,'0')}.${ext}`;
+      filesData.push({ name: newName, data: b64, type: studentFiles[i].type });
+    }
+
+    setProgress(60, 'กำลังอัปโหลดไปยัง Google Drive...');
+
+    const typeLabel = { midterm: 'กลางภาค', final: 'ปลายภาค', quiz: 'สอบย่อย', makeup: 'สอบซ่อม' };
+    const payload = {
+      studentId, name, section, seat,
+      course: `${examData.courseCode} - ${examData.courseName}`,
+      examType: `${typeLabel[examData.examType] || examData.examType}_${examData.semester || ''}`,
+      files: filesData,
+      submittedAt: new Date().toISOString()
+    };
+
+    // GAS requires no-cors for POST, use form-encoded workaround via fetch with redirect follow
+    const res = await fetch(gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+      redirect: 'follow'
+    });
+
+    let result;
+    try {
+      const text = await res.text();
+      result = JSON.parse(text);
+    } catch(e) {
+      result = { ok: true }; // GAS responded but body unparseable = still success
+    }
+    if (!result.ok) throw new Error(result.error || 'Upload failed');
+
+    setProgress(100, 'อัปโหลดสำเร็จ!');
+
+    // บันทึก log ฝั่ง teacher (local)
+    const refCode = `REF-${Date.now().toString(36).toUpperCase()}`;
+    const now = new Date();
+    const sub = {
+      studentId, name, section, seat,
+      files: studentFiles.map(f=>f.name).join(', '),
+      fileCount: studentFiles.length,
+      time: now.toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'}),
+      dateStr: now.toLocaleDateString('th-TH'),
+      refCode
+    };
+    submissions.unshift(sub);
+    localStorage.setItem('examSubmissions', JSON.stringify(submissions));
+
+    // แสดง success
+    setTimeout(() => {
+      document.getElementById('studentForm').style.display = 'none';
+      document.getElementById('s-success').style.display = 'block';
+      document.getElementById('s-receipt').innerHTML = `
+        <div class="receipt-row"><span class="receipt-key">รหัสอ้างอิง</span><span class="receipt-val">${refCode}</span></div>
+        <div class="receipt-row"><span class="receipt-key">รหัสนักศึกษา</span><span class="receipt-val">${studentId}</span></div>
+        <div class="receipt-row"><span class="receipt-key">ชื่อ-สกุล</span><span class="receipt-val">${name}</span></div>
+        <div class="receipt-row"><span class="receipt-key">กลุ่มเรียน</span><span class="receipt-val">${section}</span></div>
+        <div class="receipt-row"><span class="receipt-key">เลขที่นั่งสอบ</span><span class="receipt-val">${seat}</span></div>
+        <div class="receipt-row"><span class="receipt-key">ไฟล์ที่ส่ง</span><span class="receipt-val">${studentFiles.length} ไฟล์</span></div>
+        <div class="receipt-row"><span class="receipt-key">เวลาส่ง</span><span class="receipt-val">${now.toLocaleString('th-TH')}</span></div>
+      `;
+      setProgress(0);
+    }, 600);
+
+  } catch (err) {
+    showAlert('alertStudent', `เกิดข้อผิดพลาด: ${err.message}`, 'error');
+    btn.disabled = false;
+    btn.textContent = 'ส่งกระดาษคำตอบ';
+    setProgress(0);
+  }
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function v(id) { return document.getElementById(id)?.value || ''; }
+function set(id, val) { const el = document.getElementById(id); if(el) el.value = val; }
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 6000);
+}
+
+function setProgress(pct, label) {
+  const wrap = document.getElementById('s-progressWrap');
+  const fill = document.getElementById('s-progressFill');
+  const lbl = document.getElementById('s-progressLabel');
+  if (pct === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  fill.style.width = pct + '%';
+  if (label) lbl.textContent = label;
+}
+
+function switchTeacherTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const names = ['create','submissions','setup'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tc-'+name).classList.add('active');
+  if (name === 'submissions') { loadSubmissions(); updateStats(); }
+  if (name === 'setup') loadConfig();
+}
+
+init();
+</script>
+</body>
+</html>
